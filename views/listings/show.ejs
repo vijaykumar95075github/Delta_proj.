@@ -1,0 +1,107 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="row mt-3">
+    <div class="col-8 offset-3">
+        <h3><%= listing.title %></h3>
+    </div>
+    <div class="card col-6 offset-3 show-card listing-card">
+        <img 
+            src="<%= listing.image.url %>"
+            class="card-img-top show-img"
+            alt="listing_image"
+        />
+        <div class="card-body">
+            <p class="card-text">Owned by
+                <i><%= listing.owner.username %></i></p>
+                
+               <p> <%= listing.description %> </p>
+               <p> &#8377; <%= listing.price.toLocaleString("en-IN") %> </p>
+               <p> <%= listing.location %> </p>
+               <p> <%= listing.country %> </p>
+            
+        </div>
+    </div>
+    <br>
+
+    <% if(currUser && listing.owner._id.equals(currUser._id)) {  %>
+
+    <div class="btns">
+        <a href="/listings/<%= listing._id %>/edit"
+            class="btn btn-dark col-1 offset-3 edit-btn">Edit</a>        
+        <form method="POST" action="/listings/<%=listing._id %>?_method=DELETE">
+            <button class="btn btn-dark col-1 offset-9">Delete</button>
+        </form>
+    </div>
+    <% } %> 
+    <div class="col-8 offset-3 mb-3">
+        <hr/>
+        <% if(currUser)  { %>
+        <h4>Leave a Review </h4>
+        <form action="/listings/<%= listing.id %>/reviews" method="POST" novalidate class="needs-validation">
+             <div class="mb-3 mt-3">
+                <label  for="rating" class="form-label">Rating</label>
+                <input type="range" min="0" max="5" id="rating" name="review[rating]" class="form-range">
+             </div>
+             
+
+            <div class="mb-3 mt-3">
+                <label for="comment" class="form-label">Comments</label>
+                <textarea name="review[comment]" id="comment" cols="30" rows="5" class="form-control" required></textarea>
+                <div class="invalid-feedback">Please add some comments for review</div>
+            </div>
+            <button class="btn btn-outline-dark">Submit</button>
+        </form>
+
+        <% } %>
+        <hr />
+        <% if(listing.reviews.length > 0) { %>
+            <div class="row">
+                <p><b>All Reviews</b></p> 
+                <% for(review of listing.reviews) { %>
+                    <div class="card col-5 ms-3 mb-3">
+                        <div class="card-body">  
+                            <h5 class="card-title">@<%= review.author.username  %></h5>
+                            <p class="card-text"><%= review.comment %></p>
+                            <p class="card-text"><%= review.rating %> stars</p>
+                        </div>
+                        <% if(currUser)  { %>
+                            <form class="mb-3" method="POST" action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE">
+                                <button class="btn btn-sm btn-dark">Delete</button>
+                            </form>
+                        <% } %>
+                    </div>
+                <% } %>
+            </div>
+        <% } %>        
+    </div>
+    <div class="col-6 offset-3 mb-3">
+        <h3>Where you'll be</h3>
+        <div id="map" style="width: 100%; height: 400px;"></div>
+    </div>
+</div>
+
+<script>
+    const mapToken = "<%= process.env.MAP_TOKEN %>";
+    const listing = <%- JSON.stringify(listing) %>;
+   
+
+    mapboxgl.accessToken = mapToken;
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: listing.geometry.coordinates,
+        zoom: 10
+    });
+
+    const marker = new mapboxgl.Marker({color: "red"})
+        .setLngLat(listing.geometry.coordinates)
+        .setPopup(
+            new mapboxgl.Popup({offset: 25}).setHTML(
+                `<h4>${listing.title}</h4><P>Exact location will be provided after booking</P>`
+            )
+        )
+        .addTo(map);
+</script>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet" />
